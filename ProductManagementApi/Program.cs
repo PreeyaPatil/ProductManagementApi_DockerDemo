@@ -1,8 +1,10 @@
+using ECommerceAPI.Extensions;
 using Microsoft.EntityFrameworkCore;
 using ProductManagementApi.Data;
 using ProductManagementApi.Extensions;
 using ProductManagementApi.Repositories;
 using ProductManagementApi.Services;
+using Serilog;
 
 namespace ProductManagementApi
 {
@@ -35,6 +37,13 @@ namespace ProductManagementApi
             // that will later be displayed through Swagger UI.
             builder.Services.AddSwaggerDocumentation();
 
+
+            // Configure Serilog as the application's logging provider.
+            // Serilog configuration is loaded from appsettings.json
+            // through the AddSerilogLogging extension method.
+            builder.AddSerilogLogging();
+
+
             // Register ApplicationDbContext and configure it to use SQL Server
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -48,10 +57,16 @@ namespace ProductManagementApi
             // Enable Swagger middleware for all environment
             //app.UseSwagger();
             app.UseSwaggerDocumentation();
-            //if (app.Environment.IsDevelopment())
-            //{
-            //app.UseSwaggerDocumentation();
-            //}
+
+            // Adds ASP.NET Core's TraceIdentifier to Serilog LogContext.
+            // All log statements generated while processing the same HTTP
+            // request can therefore contain the same TraceIdentifier.
+            app.UseTraceIdentifierLogging();
+
+            // Logs one structured summary entry for every HTTP request.
+            // Typical information includes request path, status code, and execution time.
+            app.UseSerilogRequestLogging();
+
 
             // Redirect all HTTP requests to HTTPS
             app.UseHttpsRedirection();
